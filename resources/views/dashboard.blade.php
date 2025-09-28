@@ -11,7 +11,7 @@
                         <option value="unlock">Unlock</option>
                         <option value="status">Get Status</option>
                     </select>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Send</button>
+                    <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors">Send</button>
                 </div>
             </form>
             <div class="mt-4">
