@@ -20,5 +20,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'esp32test@example.com',
             'password' => bcrypt('esp32password2025'),
         ]);
+
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'homeadmin.com',
+            'password' => bcrypt('Passworrd2025***'),
+            'is_admin' => true,
+        ]);
     }
 }
