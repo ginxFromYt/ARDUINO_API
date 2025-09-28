@@ -51,7 +51,7 @@ Route::middleware(['auth'])->group(function () {
         $doorLock->last_command = $request->command;
         $doorLock->save();
 
-        return back()->with('status', 'Command sent successfully.');
+        return back()->with('status', 'Command sent successfully.')->with('last_command', $request->command);
     })->name('esp32.sendCommand');
 });
 

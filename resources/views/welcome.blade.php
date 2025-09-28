@@ -9,12 +9,39 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <style>
-        body { font-family: Arial, sans-serif; background: #f8fafc; color: #222; text-align: center; padding: 40px; }
-        .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #eee; display: inline-block; padding: 32px 48px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f8fafc; 
+            color: #222; 
+            text-align: center; 
+            padding: 20px; 
+        }
+        .container { 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px #eee; 
+            display: inline-block; 
+            padding: 24px 32px; 
+            max-width: 90%; 
+            box-sizing: border-box; 
+        }
         h1 { color: #2563eb; }
         a { color: #2563eb; text-decoration: none; }
-        .api-list { text-align: left; margin: 24px auto; max-width: 400px; }
-        .api-list li { margin-bottom: 8px; }
+        .api-list { 
+            text-align: left; 
+            margin: 24px auto; 
+            max-width: 400px; 
+            padding: 0; 
+        }
+        .api-list li { 
+            margin-bottom: 8px; 
+            font-size: 0.9em; 
+        }
+        @media (min-width: 768px) {
+            body { padding: 40px; }
+            .container { padding: 32px 48px; max-width: none; }
+            .api-list li { font-size: 1em; }
+        }
     </style>
 </head>
 <body>

@@ -1,16 +1,5 @@
 <x-layouts.app :title="__('Dashboard')">
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-        </div>
         <div class="relative h-full flex-1 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
             <h2 class="text-xl font-bold mb-4">ESP32 Control Panel</h2>
             <form method="POST" action="{{ route('esp32.sendCommand') }}" class="mb-6">
@@ -28,8 +17,11 @@
             <div class="mt-4">
                 <h3 class="font-semibold mb-2">ESP32 Status:</h3>
                 <div class="border rounded p-3 bg-gray-50 dark:bg-gray-800">
-                    <!-- Later: Show status fetched from API -->
-                    <span class="text-gray-700 dark:text-gray-200">Status will appear here.</span>
+                    @if(session('last_command'))
+                        <span class="text-gray-700 dark:text-gray-200">Last command sent: {{ ucfirst(session('last_command')) }}</span>
+                    @else
+                        <span class="text-gray-700 dark:text-gray-200">No command sent yet.</span>
+                    @endif
                 </div>
             </div>
         </div>
