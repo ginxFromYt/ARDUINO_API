@@ -15,6 +15,7 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
@@ -32,6 +33,26 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    // ESP32 command sender route
+    Route::post('esp32/send-command', function (\Illuminate\Http\Request $request) {
+        $request->validate([
+            'command' => 'required|in:lock,unlock,status',
+        ]);
+
+        $doorLock = \App\Models\DoorLock::where('user_id', \Illuminate\Support\Facades\Auth::id())->firstOrFail();
+
+        \App\Models\Command::create([
+            'door_lock_id' => $doorLock->id,
+            'command' => $request->command,
+            'executed' => false,
+        ]);
+
+        $doorLock->last_command = $request->command;
+        $doorLock->save();
+
+        return back()->with('status', 'Command sent successfully.');
+    })->name('esp32.sendCommand');
 });
 
 require __DIR__.'/auth.php';

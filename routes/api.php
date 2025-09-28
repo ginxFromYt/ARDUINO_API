@@ -12,5 +12,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // ESP32 endpoints (no auth)
-Route::post('/door/status', [DoorLockController::class, 'updateStatus']);
-Route::get('/door/command', [DoorLockController::class, 'getPendingCommand']);
+Route::middleware('api.key')->group(function () {
+    Route::post('/door/status', [DoorLockController::class, 'updateStatus']);
+    Route::get('/door/command', [DoorLockController::class, 'getPendingCommand']);
+});

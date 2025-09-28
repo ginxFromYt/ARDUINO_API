@@ -27,5 +27,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('Passworrd2025***'),
             'is_admin' => true,
         ]);
+
+        $this->call(DoorLockSeeder::class);
     }
 }

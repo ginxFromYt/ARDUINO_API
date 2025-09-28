@@ -16,7 +16,7 @@ class DoorLockController extends Controller
     {
         $request->validate([
             'door_lock_id' => 'required|exists:door_locks,id',
-            'command' => 'required|in:lock,unlock',
+            'command' => 'required|in:lock,unlock,status',
         ]);
 
         $doorLock = DoorLock::where('id', $request->door_lock_id)
@@ -37,6 +37,7 @@ class DoorLockController extends Controller
 
     public function getPendingCommand(Request $request)
     {
+
         $request->validate([
             'door_lock_id' => 'required|exists:door_locks,id',
         ]);
@@ -46,20 +47,30 @@ class DoorLockController extends Controller
             ->latest()
             ->first();
 
-        return $command ? new CommandResource($command) : response()->json(['message' => 'No pending command'], 404);
+        if ($command) {
+            return response()->json([
+                'command' => $command->command,
+                'door_lock_id' => $command->door_lock_id,
+                'id' => $command->id,
+            ]);
+        } else {
+            return response()->json(['message' => 'No pending command'], 404);
+        }
     }
 
     public function updateStatus(Request $request)
     {
         $request->validate([
             'door_lock_id' => 'required|exists:door_locks,id',
-            'status' => 'required|in:locked,unlocked',
+            'status' => 'nullable|in:locked,unlocked',
             'command_id' => 'nullable|exists:commands,id',
         ]);
 
         $doorLock = DoorLock::findOrFail($request->door_lock_id);
-        $doorLock->status = $request->status;
-        $doorLock->save();
+        if ($request->status) {
+            $doorLock->status = $request->status;
+            $doorLock->save();
+        }
 
         if ($request->command_id) {
             $command = Command::find($request->command_id);
