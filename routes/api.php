@@ -15,4 +15,5 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('api.key')->group(function () {
     Route::post('/door/status', [DoorLockController::class, 'updateStatus']);
     Route::get('/door/command', [DoorLockController::class, 'getPendingCommand']);
+    Route::post('/door/validate-rfid', [DoorLockController::class, 'validateRfid']);
 });

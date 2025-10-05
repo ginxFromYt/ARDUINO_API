@@ -92,4 +92,19 @@ class DoorLockController extends Controller
         $doorLock = DoorLock::findOrFail($request->door_lock_id);
         return new DoorLockResource($doorLock);
     }
+
+    public function validateRfid(Request $request)
+    {
+        $request->validate([
+            'door_lock_id' => 'required|exists:door_locks,id',
+            'uid' => 'required|string',
+        ]);
+
+        $doorLock = DoorLock::findOrFail($request->door_lock_id);
+        $user = $doorLock->user;
+
+        $isAuthorized = $user->rfidCards()->where('uid', $request->uid)->exists();
+
+        return response()->json(['authorized' => $isAuthorized]);
+    }
 }
