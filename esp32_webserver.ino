@@ -21,6 +21,8 @@ MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 // LCD setup
 hd44780_I2Cexp lcd(0x27); // Changed to 0x27 based on I2C scan
 
+unsigned long unlockTime = 0; // Timer for auto-lock after RFID unlock
+
 void scanI2C() {
   Serial.println("Scanning I2C devices...");
   int nDevices = 0;
@@ -111,6 +113,17 @@ void loop() {
     }
   }
 
+  // Auto-lock after RFID unlock if timer expired
+  if (unlockTime > 0 && millis() - unlockTime > 10000) { // 10 seconds
+    digitalWrite(lockPin, LOW);
+    unlockTime = 0;
+    Serial.println("Auto-locked after RFID unlock");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Door Auto-Locked");
+    delay(2000); // Show message for 2 seconds
+  }
+
   // Check for RFID card
   if (mfrc522.PICC_IsNewCardPresent()) {
     Serial.println("RFID card detected.");
@@ -146,6 +159,7 @@ void loop() {
       if (isAuthorized) {
         // Unlock if authorized
         digitalWrite(lockPin, HIGH);
+        unlockTime = millis(); // Start auto-lock timer
         Serial.println("Door Unlocked via RFID");
 
         // Display on LCD
@@ -210,6 +224,7 @@ void loop() {
       String newStatus = "";
       if (command == "lock") {
         digitalWrite(lockPin, LOW);
+        unlockTime = 0; // Reset auto-lock timer
         Serial.println("Door Locked");
         newStatus = "locked";
         lcd.clear();
@@ -217,6 +232,7 @@ void loop() {
         lcd.print("Door Locked");
       } else if (command == "unlock") {
         digitalWrite(lockPin, HIGH);
+        unlockTime = millis(); // Start auto-lock timer
         Serial.println("Door Unlocked");
         newStatus = "unlocked";
         lcd.clear();
