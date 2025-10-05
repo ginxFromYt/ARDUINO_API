@@ -22,6 +22,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 hd44780_I2Cexp lcd(0x27); // Changed to 0x27 based on I2C scan
 
 unsigned long unlockTime = 0; // Timer for auto-lock after RFID unlock
+bool isLocked = true; // Track current lock state
 
 void scanI2C() {
   Serial.println("Scanning I2C devices...");
@@ -51,6 +52,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(lockPin, OUTPUT);
   digitalWrite(lockPin, LOW); // Ensure door is locked on startup
+  isLocked = true; // Start locked
 
   // Initialize SPI and MFRC522 (using HSPI)
   SPI.begin(14, 12, 13, SS_PIN); // SCK, MISO, MOSI, SS
@@ -116,6 +118,7 @@ void loop() {
   // Auto-lock after RFID unlock if timer expired
   if (unlockTime > 0 && millis() - unlockTime > 10000) { // 10 seconds
     digitalWrite(lockPin, LOW);
+    isLocked = true;
     unlockTime = 0;
     Serial.println("Auto-locked after RFID unlock");
     lcd.clear();
@@ -157,33 +160,65 @@ void loop() {
       httpValidate.end();
 
       if (isAuthorized) {
-        // Unlock if authorized
-        digitalWrite(lockPin, HIGH);
-        unlockTime = millis(); // Start auto-lock timer
-        Serial.println("Door Unlocked via RFID");
+        if (isLocked) {
+          // Unlock
+          digitalWrite(lockPin, HIGH);
+          isLocked = false;
+          unlockTime = millis(); // Start auto-lock timer
+          Serial.println("Door Unlocked via RFID");
 
-        // Display on LCD
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("RFID Unlocked");
-        lcd.setCursor(0, 1);
-        lcd.print("UID: " + uid);
+          // Display on LCD
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("RFID Unlocked");
+          lcd.setCursor(0, 1);
+          lcd.print("UID: " + uid);
 
-        // Update status to API
-        HTTPClient httpPost;
-        String updateUrl = "https://arduino-api.ginxproduction.com/api/door/status";
-        String body = "door_lock_id=1&status=unlocked&rfid_uid=" + uid;
-        httpPost.begin(updateUrl);
-        httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
-        httpPost.addHeader("Accept", "application/json");
-        httpPost.addHeader("x-api-key", "supersecretkey");
-        int postCode = httpPost.POST(body);
-        if (postCode == 200) {
-          Serial.println("RFID unlock status updated");
+          // Update status to API
+          HTTPClient httpPost;
+          String updateUrl = "https://arduino-api.ginxproduction.com/api/door/status";
+          String body = "door_lock_id=1&status=unlocked&rfid_uid=" + uid;
+          httpPost.begin(updateUrl);
+          httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
+          httpPost.addHeader("Accept", "application/json");
+          httpPost.addHeader("x-api-key", "supersecretkey");
+          int postCode = httpPost.POST(body);
+          if (postCode == 200) {
+            Serial.println("RFID unlock status updated");
+          } else {
+            Serial.printf("Failed to update RFID status: %s\n", httpPost.errorToString(postCode).c_str());
+          }
+          httpPost.end();
         } else {
-          Serial.printf("Failed to update RFID status: %s\n", httpPost.errorToString(postCode).c_str());
+          // Lock
+          digitalWrite(lockPin, LOW);
+          isLocked = true;
+          unlockTime = 0; // Reset timer
+          Serial.println("Door Locked via RFID");
+
+          // Display on LCD
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("RFID Locked");
+          lcd.setCursor(0, 1);
+          lcd.print("UID: " + uid);
+
+          // Update status to API
+          HTTPClient httpPost;
+          String updateUrl = "https://arduino-api.ginxproduction.com/api/door/status";
+          String body = "door_lock_id=1&status=locked&rfid_uid=" + uid;
+          httpPost.begin(updateUrl);
+          httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
+          httpPost.addHeader("Accept", "application/json");
+          httpPost.addHeader("x-api-key", "supersecretkey");
+          int postCode = httpPost.POST(body);
+          if (postCode == 200) {
+            Serial.println("RFID lock status updated");
+          } else {
+            Serial.printf("Failed to update RFID status: %s\n", httpPost.errorToString(postCode).c_str());
+          }
+          httpPost.end();
         }
-        httpPost.end();
       } else {
         Serial.println("RFID card not authorized");
         lcd.clear();
@@ -224,6 +259,7 @@ void loop() {
       String newStatus = "";
       if (command == "lock") {
         digitalWrite(lockPin, LOW);
+        isLocked = true;
         unlockTime = 0; // Reset auto-lock timer
         Serial.println("Door Locked");
         newStatus = "locked";
@@ -232,6 +268,7 @@ void loop() {
         lcd.print("Door Locked");
       } else if (command == "unlock") {
         digitalWrite(lockPin, HIGH);
+        isLocked = false;
         unlockTime = millis(); // Start auto-lock timer
         Serial.println("Door Unlocked");
         newStatus = "unlocked";
