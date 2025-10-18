@@ -11,9 +11,27 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Smart dashboard redirect based on user role
+Route::middleware(['auth', 'verified'])->get('dashboard', function () {
+    $user = auth()->user();
+    
+    // Redirect Water Quality Admin to their dashboard
+    if ($user->email === 'wqmadmin@mail.com') {
+        return redirect()->route('water-quality.dashboard');
+    }
+    
+    // Show door lock dashboard for door lock admin and others
+    return view('dashboard');
+})->name('dashboard');
+
+// Water Quality Monitoring routes (protected by role middleware)
+Route::middleware(['auth', 'verified', 'role:water-quality-admin'])->prefix('water-quality')->name('water-quality.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\WaterQualityController::class, 'dashboard'])->name('dashboard');
+    Route::get('/devices', [App\Http\Controllers\WaterQualityController::class, 'devices'])->name('devices');
+    Route::get('/device/{deviceId}', [App\Http\Controllers\WaterQualityController::class, 'device'])->name('device');
+    Route::get('/chart-data/{deviceId}', [App\Http\Controllers\WaterQualityController::class, 'chartData'])->name('chart-data');
+    Route::get('/export/{deviceId}', [App\Http\Controllers\WaterQualityController::class, 'export'])->name('export');
+});
 
 
 Route::middleware(['auth'])->group(function () {

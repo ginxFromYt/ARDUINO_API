@@ -12,9 +12,41 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                </flux:navlist.group>
+                @php
+                    $user = auth()->user();
+                    $isWaterQualityAdmin = $user->email === 'wqmadmin@mail.com';
+                    $isDoorLockAdmin = $user->email === 'homeadmin@mail.com';
+                @endphp
+
+                @if($isWaterQualityAdmin)
+                    <!-- Water Quality Admin Navigation -->
+                    <flux:navlist.group :heading="__('Water Quality Monitoring')" class="grid">
+                        <flux:navlist.item icon="presentation-chart-bar" :href="route('water-quality.dashboard')" :current="request()->routeIs('water-quality.*')" wire:navigate>{{ __('WQ Dashboard') }}</flux:navlist.item>
+                        <flux:navlist.item icon="server" :href="route('water-quality.devices')" :current="request()->routeIs('water-quality.devices')" wire:navigate>{{ __('Devices') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                @elseif($isDoorLockAdmin)
+                    <!-- Door Lock Admin Navigation -->
+                    <flux:navlist.group :heading="__('Door Lock System')" class="grid">
+                        <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Door Control') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                @else
+                    <!-- Regular User Navigation -->
+                    <flux:navlist.group :heading="__('Platform')" class="grid">
+                        <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
+
+                @if($user->is_admin)
+                    <!-- Admin Only Navigation -->
+                    <flux:navlist.group :heading="__('Administration')" class="grid">
+                        @if(!$isWaterQualityAdmin)
+                            <flux:navlist.item icon="presentation-chart-bar" :href="route('water-quality.dashboard')" :current="request()->routeIs('water-quality.*')" wire:navigate>{{ __('Water Quality') }}</flux:navlist.item>
+                        @endif
+                        @if(!$isDoorLockAdmin)
+                            <flux:navlist.item icon="lock-closed" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Door Locks') }}</flux:navlist.item>
+                        @endif
+                    </flux:navlist.group>
+                @endif
             </flux:navlist>
 
             <flux:spacer />
