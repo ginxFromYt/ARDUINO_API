@@ -105,6 +105,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application API Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is used for authenticating API requests from Arduino devices
+    | and other external systems. Set this to a secure random string.
+    |
+    */
+
+    'api_key' => env('API_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

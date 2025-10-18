@@ -29,5 +29,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(DoorLockSeeder::class);
+        $this->call(WaterQualityAdminSeeder::class);
     }
 }
