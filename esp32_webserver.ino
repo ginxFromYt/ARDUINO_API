@@ -51,9 +51,11 @@ void scanI2C() {
 }
 
 void soundAccessDeniedBuzzer(int beeps = 3) {
-  // Sound pattern: beeps short beeps
+  // Sound pattern: beeps short beeps using simple digital write
   for (int i = 0; i < beeps; i++) {
-    tone(buzzerPin, 1000, 200); // 1000Hz tone for 200ms
+    digitalWrite(buzzerPin, HIGH);
+    delay(200);
+    digitalWrite(buzzerPin, LOW);
     delay(300); // Wait 300ms between beeps
   }
 }
