@@ -12,6 +12,7 @@ const char* password = "YOUR_WIFI_PASSWORD"; // Update to your WiFi password
 const char* commandUrl = "https://arduino-api.ginxproduction.com/api/door/command?door_lock_id=1";
 
 const int lockPin = 4; // Pin connected to relay for door lock
+const int buzzerPin = 26; // Pin connected to buzzer for access denied alerts
 
 // RFID pins (using HSPI to avoid conflict with WiFi)
 #define SS_PIN 15  // Can use 15 or 5, but 15 for HSPI
@@ -23,6 +24,7 @@ hd44780_I2Cexp lcd(0x27); // Changed to 0x27 based on I2C scan
 
 unsigned long unlockTime = 0; // Timer for auto-lock after RFID unlock
 bool isLocked = true; // Track current lock state
+int consecutiveDenies = 0; // Counter for consecutive access denied
 
 void scanI2C() {
   Serial.println("Scanning I2C devices...");
@@ -48,10 +50,20 @@ void scanI2C() {
   }
 }
 
+void soundAccessDeniedBuzzer(int beeps = 3) {
+  // Sound pattern: beeps short beeps
+  for (int i = 0; i < beeps; i++) {
+    tone(buzzerPin, 1000, 200); // 1000Hz tone for 200ms
+    delay(300); // Wait 300ms between beeps
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(lockPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
   digitalWrite(lockPin, LOW); // Ensure door is locked on startup
+  digitalWrite(buzzerPin, LOW); // Ensure buzzer is off on startup
   isLocked = true; // Start locked
 
   // Initialize SPI and MFRC522 (using HSPI)
@@ -160,6 +172,7 @@ void loop() {
       httpValidate.end();
 
       if (isAuthorized) {
+        consecutiveDenies = 0; // Reset deny counter on successful access
         if (isLocked) {
           // Unlock
           digitalWrite(lockPin, HIGH);
@@ -221,6 +234,13 @@ void loop() {
         }
       } else {
         Serial.println("RFID card not authorized");
+        consecutiveDenies++;
+        if (consecutiveDenies >= 3) {
+          soundAccessDeniedBuzzer(5); // Longer alert for 3+ denies
+          consecutiveDenies = 0; // Reset after alert
+        } else {
+          soundAccessDeniedBuzzer(3); // Normal deny alert
+        }
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Access Denied");
