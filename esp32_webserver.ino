@@ -7,8 +7,8 @@
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h>
 
-const char* ssid = "JAJA's_WIFI"; // Replace with your SSID
-const char* password = "Elai's_WIFI_2025"; // Replace with your WiFi password
+const char* ssid = "YOUR_WIFI_SSID"; // Update to your WiFi SSID
+const char* password = "YOUR_WIFI_PASSWORD"; // Update to your WiFi password
 const char* commandUrl = "https://arduino-api.ginxproduction.com/api/door/command?door_lock_id=1";
 
 const int lockPin = 4; // Pin connected to relay for door lock
