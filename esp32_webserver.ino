@@ -7,27 +7,14 @@
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h>
 
-// ESP32 Smart Door Lock System with Buzzer Alert
-// Features: RFID access control, WiFi API integration, LCD display, buzzer alerts
-
-// ESP32 S3 Smart Door Lock System
-// Compatible with ESP32 S3 board
-// SPI pins: SCK=18, MISO=19, MOSI=23
-// I2C pins: SDA=8, SCL=9 (defaults)
-
 const char* ssid = "JAJA's_WIFI"; // Replace with your SSID
 const char* password = "Elai's_WIFI_2025"; // Replace with your WiFi password
 const char* commandUrl = "https://arduino-api.ginxproduction.com/api/door/command?door_lock_id=1";
 
-// IMPORTANT: Check your API key in the Laravel .env file and update if necessary
-// The API key should match the value in your Laravel application's .env file
-const char* apiKey = "supersecretkey";
-
 const int lockPin = 4; // Pin connected to relay for door lock
-const int buzzerPin = 26; // Pin connected to buzzer for access denied alerts
 
-// RFID pins (using VSPI for ESP32 S3 compatibility)
-#define SS_PIN 15  // Can use 15 or 5
+// RFID pins (using HSPI to avoid conflict with WiFi)
+#define SS_PIN 15  // Can use 15 or 5, but 15 for HSPI
 #define RST_PIN 25  // Changed from 22 to avoid I2C conflict
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 
@@ -61,24 +48,14 @@ void scanI2C() {
   }
 }
 
-void soundAccessDeniedBuzzer() {
-  // Sound pattern: 3 short beeps
-  for (int i = 0; i < 3; i++) {
-    tone(buzzerPin, 1000, 200); // 1000Hz tone for 200ms
-    delay(300); // Wait 300ms between beeps
-  }
-}
-
 void setup() {
   Serial.begin(115200);
   pinMode(lockPin, OUTPUT);
-  pinMode(buzzerPin, OUTPUT);
   digitalWrite(lockPin, LOW); // Ensure door is locked on startup
-  digitalWrite(buzzerPin, LOW); // Ensure buzzer is off on startup
   isLocked = true; // Start locked
 
-  // Initialize SPI and MFRC522 (using VSPI for ESP32 S3)
-  SPI.begin(18, 19, 23, SS_PIN); // SCK, MISO, MOSI, SS for ESP32 S3
+  // Initialize SPI and MFRC522 (using HSPI)
+  SPI.begin(14, 12, 13, SS_PIN); // SCK, MISO, MOSI, SS
   mfrc522.PCD_Init();
   Serial.println("RFID reader initialized.");
 
@@ -88,7 +65,7 @@ void setup() {
   int status = lcd.begin(20, 4);
   if (status) {
     Serial.println("LCD init failed, status: " + String(status));
-    Serial.println("Check wiring: VCC 5V, GND, SDA GPIO8, SCL GPIO9 (ESP32 S3 defaults)");
+    Serial.println("Check wiring: VCC 5V, GND, SDA GPIO21, SCL GPIO22");
     // Handle error, perhaps halt or retry
   }
   lcd.backlight();
@@ -169,7 +146,7 @@ void loop() {
       httpValidate.begin(validateUrl);
       httpValidate.addHeader("Content-Type", "application/x-www-form-urlencoded");
       httpValidate.addHeader("Accept", "application/json");
-      httpValidate.addHeader("x-api-key", apiKey);
+      httpValidate.addHeader("x-api-key", "supersecretkey");
       int validateCode = httpValidate.POST(validateBody);
       bool isAuthorized = false;
       if (validateCode == 200) {
@@ -204,7 +181,7 @@ void loop() {
           httpPost.begin(updateUrl);
           httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
           httpPost.addHeader("Accept", "application/json");
-          httpPost.addHeader("x-api-key", apiKey);
+          httpPost.addHeader("x-api-key", "supersecretkey");
           int postCode = httpPost.POST(body);
           if (postCode == 200) {
             Serial.println("RFID unlock status updated");
@@ -233,7 +210,7 @@ void loop() {
           httpPost.begin(updateUrl);
           httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
           httpPost.addHeader("Accept", "application/json");
-          httpPost.addHeader("x-api-key", apiKey);
+          httpPost.addHeader("x-api-key", "supersecretkey");
           int postCode = httpPost.POST(body);
           if (postCode == 200) {
             Serial.println("RFID lock status updated");
@@ -244,7 +221,6 @@ void loop() {
         }
       } else {
         Serial.println("RFID card not authorized");
-        soundAccessDeniedBuzzer(); // Sound buzzer for access denied
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Access Denied");
@@ -263,7 +239,7 @@ void loop() {
   HTTPClient http;
   http.begin(commandUrl);
   http.addHeader("Accept", "application/json");
-  http.addHeader("x-api-key", apiKey);
+  http.addHeader("x-api-key", "supersecretkey");
   int httpCode = http.GET();
 
   Serial.println("HTTP Code: " + String(httpCode));
@@ -324,7 +300,7 @@ void loop() {
       httpPost.begin(updateUrl);
       httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
       httpPost.addHeader("Accept", "application/json");
-      httpPost.addHeader("x-api-key", apiKey);
+      httpPost.addHeader("x-api-key", "supersecretkey");
       int postCode = httpPost.POST(body);
 
       if (postCode == 200) {
@@ -339,13 +315,10 @@ void loop() {
   } else if (httpCode == 404) {
     Serial.println("No pending command");
   } else {
-    String errorResponse = http.getString();
     Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
-    Serial.println("Error response: " + errorResponse);
   }
   http.end();
 
-  delay(2000); // Increased delay to prevent overwhelming the API and watchdog resets
-  yield(); // Allow other tasks to run and prevent watchdog resets
+  delay(1000); // Reduced for faster RFID checks during testing
 }
 
